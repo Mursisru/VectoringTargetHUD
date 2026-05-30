@@ -58,6 +58,75 @@ namespace VectoringTargetHUD_Engine
             BuildHudUi();
         }
 
+        private bool _usePrismCached;
+        private int _configFrame = -1;
+        private float _updateRateHz;
+        private float _positionSmoothing;
+        private float _maxScreenStepPx;
+        private float _holdWindowSeconds;
+        private float _switchHysteresisPx;
+        private float _lineThicknessPx;
+        private float _perspectiveThicknessBoost;
+        private float _prismMinLengthPx;
+        private float _prismBaseWidthPx;
+        private float _prismTipWidthPx;
+        private float _prismDepthSkew;
+        private float _prismAlphaGradient;
+        private float _prismBaseOffsetPx;
+        private float _noseDotDistanceMeters;
+        private float _noseDotDistanceByRangeFactor;
+        private float _noseDotDistanceMaxMeters;
+        private float _noseDotDistanceMinMeters;
+        private float _nearDistanceMeters;
+        private float _nearDistanceScale;
+        private bool _debugMode;
+        private float _lineAlpha;
+        private Color _liveColorBase;
+        private Color _holdColorBase;
+
+        private void EnsureRenderConfig()
+        {
+            int frame = Time.frameCount;
+            if (frame == _configFrame)
+                return;
+            _configFrame = frame;
+            _updateRateHz = Mathf.Max(1f, GetValue(VectoringTargetHUDPlugin.UpdateRateHz, 20f));
+            _positionSmoothing = Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.PositionSmoothing, 0.2f));
+            _maxScreenStepPx = Mathf.Max(10f, GetValue(VectoringTargetHUDPlugin.MaxScreenStepPx, 260f));
+            _holdWindowSeconds = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.HoldWindowSeconds, 1f), 0f, 3f);
+            _switchHysteresisPx = Mathf.Max(0f, GetValue(VectoringTargetHUDPlugin.SwitchHysteresisPx, 28f));
+            _lineThicknessPx = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.LineThicknessPx, 2.5f), 1f, 12f);
+            _perspectiveThicknessBoost = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.PerspectiveThicknessBoost, 0.4f), 0f, 2f);
+            _prismMinLengthPx = Mathf.Max(1f, GetValue(VectoringTargetHUDPlugin.PrismMinLengthPx, 10f));
+            _prismBaseWidthPx = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.PrismBaseWidthPx, 18f), 4f, 80f);
+            _prismTipWidthPx = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.PrismTipWidthPx, 2.5f), 1f, _prismBaseWidthPx);
+            _prismDepthSkew = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.PrismDepthSkew, 0.35f), 0f, 1f);
+            _prismAlphaGradient = Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.PrismAlphaGradient, 0.45f));
+            _prismBaseOffsetPx = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.PrismBaseOffsetPx, 8f), 0f, 50f);
+            _noseDotDistanceMeters = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.NoseDotDistanceMeters, 80f), 8f, 500f);
+            _noseDotDistanceByRangeFactor = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.NoseDotDistanceByRangeFactor, 0.05f), 0f, 1f);
+            _noseDotDistanceMaxMeters = Mathf.Max(_noseDotDistanceMeters, GetValue(VectoringTargetHUDPlugin.NoseDotDistanceMaxMeters, 1200f));
+            _noseDotDistanceMinMeters = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.NoseDotDistanceMinMeters, 20f), 4f, _noseDotDistanceMaxMeters);
+            _nearDistanceMeters = Mathf.Max(1f, GetValue(VectoringTargetHUDPlugin.NearDistanceMeters, 1200f));
+            _nearDistanceScale = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.NearDistanceScale, 0.55f), 0.1f, 1f);
+            _debugMode = GetValue(VectoringTargetHUDPlugin.DebugMode, false);
+            _usePrismCached = string.Equals(
+                GetString(VectoringTargetHUDPlugin.ShapeMode, "Prism") ?? "Prism",
+                "Prism",
+                System.StringComparison.OrdinalIgnoreCase);
+            _lineAlpha = Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.LineAlpha, 0.9f));
+            _liveColorBase = new Color(
+                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.LiveColorR, 0.2f)),
+                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.LiveColorG, 1f)),
+                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.LiveColorB, 0.35f)),
+                _lineAlpha);
+            _holdColorBase = new Color(
+                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.HoldColorR, 1f)),
+                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.HoldColorG, 0.85f)),
+                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.HoldColorB, 0.2f)),
+                _lineAlpha);
+        }
+
         private void Update()
         {
             if (_lineImage == null || _flightHud == null)
@@ -65,15 +134,16 @@ namespace VectoringTargetHUD_Engine
                 return;
             }
 
+            EnsureRenderConfig();
+
             if (_cam == null)
             {
                 _cam = SceneSingleton<CameraStateManager>.i != null ? SceneSingleton<CameraStateManager>.i.mainCamera : Camera.main;
             }
 
-            float hz = Mathf.Max(1f, GetValue(VectoringTargetHUDPlugin.UpdateRateHz, 20f));
             if (Time.unscaledTime >= _nextTick)
             {
-                _nextTick = Time.unscaledTime + 1f / hz;
+                _nextTick = Time.unscaledTime + 1f / _updateRateHz;
                 UpdateActiveTarget();
             }
 
@@ -161,7 +231,7 @@ namespace VectoringTargetHUD_Engine
                 {
                     float currentScore = ScreenScore(_activeTarget);
                     float newScore = ScreenScore(candidate);
-                    float hysteresis = Mathf.Max(0f, GetValue(VectoringTargetHUDPlugin.SwitchHysteresisPx, 28f));
+                    float hysteresis = _switchHysteresisPx;
                     if (newScore + hysteresis >= currentScore)
                     {
                         candidate = _activeTarget;
@@ -185,7 +255,7 @@ namespace VectoringTargetHUD_Engine
 
             _candidateTarget = null;
             _candidateSeenTime = 0f;
-            float hold = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.HoldWindowSeconds, 1f), 0f, 3f);
+            float hold = _holdWindowSeconds;
             if (_lastTarget != null && Time.timeSinceLevelLoad - _lastSeenTime <= hold && IsAirTarget(_lastTarget) && _holdSpeedMps >= MinAirTargetSpeedKmh * KmhToMps)
             {
                 _activeTarget = _lastTarget;
@@ -329,13 +399,13 @@ namespace VectoringTargetHUD_Engine
                 rawDelta = rawDelta.normalized * 45f;
             }
 
-            float smooth = Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.PositionSmoothing, 0.2f));
+            float smooth = _positionSmoothing;
             if (_smoothedDirectionScreen == Vector2.zero)
             {
                 _smoothedDirectionScreen = rawDelta;
             }
             Vector2 lerpedDir = Vector2.Lerp(_smoothedDirectionScreen, rawDelta, 1f - smooth);
-            float maxStep = Mathf.Max(10f, GetValue(VectoringTargetHUDPlugin.MaxScreenStepPx, 260f)) * Mathf.Max(Time.deltaTime, 0.005f);
+            float maxStep = _maxScreenStepPx * Mathf.Max(Time.deltaTime, 0.005f);
             _smoothedDirectionScreen = Vector2.MoveTowards(_smoothedDirectionScreen, lerpedDir, maxStep);
 
             if (_smoothedDirectionScreen.sqrMagnitude < 0.0001f)
@@ -343,7 +413,7 @@ namespace VectoringTargetHUD_Engine
                 return frame;
             }
             float length = _smoothedDirectionScreen.magnitude;
-            float minVisibleLength = Mathf.Max(1f, GetValue(VectoringTargetHUDPlugin.PrismMinLengthPx, 10f));
+            float minVisibleLength = _prismMinLengthPx;
             if (length < minVisibleLength)
             {
                 // Keep marker visible at long range by enforcing a minimum on-screen length.
@@ -364,12 +434,12 @@ namespace VectoringTargetHUD_Engine
 
         private float ComputeNoseDotDistance(Vector3 worldStart)
         {
-            float baseNoseDotDistance = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.NoseDotDistanceMeters, 80f), 8f, 500f);
-            float rangeFactor = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.NoseDotDistanceByRangeFactor, 0.05f), 0f, 1f);
-            float maxNoseDotDistance = Mathf.Max(baseNoseDotDistance, GetValue(VectoringTargetHUDPlugin.NoseDotDistanceMaxMeters, 1200f));
-            float minNoseDotDistance = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.NoseDotDistanceMinMeters, 20f), 4f, maxNoseDotDistance);
-            float nearDistance = Mathf.Max(1f, GetValue(VectoringTargetHUDPlugin.NearDistanceMeters, 1200f));
-            float nearScale = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.NearDistanceScale, 0.55f), 0.1f, 1f);
+            float baseNoseDotDistance = _noseDotDistanceMeters;
+            float rangeFactor = _noseDotDistanceByRangeFactor;
+            float maxNoseDotDistance = _noseDotDistanceMaxMeters;
+            float minNoseDotDistance = _noseDotDistanceMinMeters;
+            float nearDistance = _nearDistanceMeters;
+            float nearScale = _nearDistanceScale;
             float targetRange = Vector3.Distance(_cam.transform.position, worldStart);
             float noseDotDistance = baseNoseDotDistance + targetRange * rangeFactor;
             float nearT = Mathf.Clamp01(targetRange / nearDistance);
@@ -399,7 +469,7 @@ namespace VectoringTargetHUD_Engine
                 return false;
             }
 
-            float hold = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.HoldWindowSeconds, 1f), 0f, 3f);
+            float hold = _holdWindowSeconds;
             float age = Time.timeSinceLevelLoad - tracking.lastSpottedTime;
             if (age <= hold)
             {
@@ -492,7 +562,7 @@ namespace VectoringTargetHUD_Engine
 
         private float ResolveVisualThickness(Vector3 direction)
         {
-            float baseThickness = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.LineThicknessPx, 2.5f), 1f, 12f);
+            float baseThickness = _lineThicknessPx;
             if (_cam == null || direction.sqrMagnitude < 0.0001f)
             {
                 return baseThickness;
@@ -500,7 +570,7 @@ namespace VectoringTargetHUD_Engine
 
             Vector3 dirNorm = direction.normalized;
             float depthComponent = Mathf.Abs(Vector3.Dot(dirNorm, _cam.transform.forward));
-            float boost = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.PerspectiveThicknessBoost, 0.4f), 0f, 2f);
+            float boost = _perspectiveThicknessBoost;
             return Mathf.Clamp(baseThickness * (1f + depthComponent * boost), 1f, 14f);
         }
 
@@ -509,7 +579,7 @@ namespace VectoringTargetHUD_Engine
             SetPrismVisible(false);
             _lineImage.enabled = true;
             var rt = _lineImage.rectTransform;
-            rt.sizeDelta = new Vector2(frame.Length, Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.LineThicknessPx, 2.5f), 1f, 12f));
+            rt.sizeDelta = new Vector2(frame.Length, _lineThicknessPx);
             rt.position = new Vector3(frame.StartScreen.x, frame.StartScreen.y, 0f);
             rt.rotation = Quaternion.Euler(0f, 0f, frame.AngleDeg);
             _lineImage.color = frame.HoldMode ? GetHoldColor() : GetLiveColor();
@@ -520,10 +590,10 @@ namespace VectoringTargetHUD_Engine
             _lineImage.enabled = false;
             SetPrismVisible(true);
 
-            float baseWidth = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.PrismBaseWidthPx, 18f), 4f, 80f);
-            float tipWidth = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.PrismTipWidthPx, 2.5f), 1f, baseWidth);
-            float depthSkew = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.PrismDepthSkew, 0.35f), 0f, 1f);
-            float gradient = Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.PrismAlphaGradient, 0.45f));
+            float baseWidth = _prismBaseWidthPx;
+            float tipWidth = _prismTipWidthPx;
+            float depthSkew = _prismDepthSkew;
+            float gradient = _prismAlphaGradient;
 
             // Smooth width/depth to avoid flicker on aggressive maneuvers.
             Vector2 targetSize = new Vector2(baseWidth, tipWidth);
@@ -536,7 +606,7 @@ namespace VectoringTargetHUD_Engine
             float width = _smoothedPrismSize.x;
             float tip = _smoothedPrismSize.y;
             float len = frame.Length;
-            float baseOffset = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.PrismBaseOffsetPx, 8f), 0f, 50f);
+            float baseOffset = _prismBaseOffsetPx;
             // Keep offset safe for short vectors so near/far scaling does not break visibility.
             baseOffset = Mathf.Min(baseOffset, Mathf.Max(0f, len * 0.35f));
 
@@ -562,14 +632,14 @@ namespace VectoringTargetHUD_Engine
 
         private void DrawDebug(RenderFrame frame)
         {
-            bool debug = GetValue(VectoringTargetHUDPlugin.DebugMode, false);
+            bool debug = _debugMode;
             _debugText.enabled = debug;
             if (!debug)
             {
                 return;
             }
 
-            float hold = Mathf.Clamp(GetValue(VectoringTargetHUDPlugin.HoldWindowSeconds, 1f), 0f, 3f);
+            float hold = _holdWindowSeconds;
             float age = Mathf.Max(0f, Time.timeSinceLevelLoad - _lastSeenTime);
             string mode = frame.HoldMode ? "hold" : "live";
             float confidence = frame.HoldMode ? Mathf.Clamp01(1f - age / Mathf.Max(hold, 0.01f)) : 1f;
@@ -577,32 +647,18 @@ namespace VectoringTargetHUD_Engine
             _debugText.rectTransform.position = new Vector3(frame.StartScreen.x, frame.StartScreen.y - 20f, 0f);
         }
 
-        private bool UsePrismMode()
-        {
-            string mode = VectoringTargetHUDPlugin.ShapeMode != null ? VectoringTargetHUDPlugin.ShapeMode.Value : "Prism";
-            return string.Equals(mode, "Prism", System.StringComparison.OrdinalIgnoreCase);
-        }
+        private bool UsePrismMode() => _usePrismCached;
 
         private Color GetLiveColor()
         {
-            Color fallback = new Color(
-                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.LiveColorR, 0.2f)),
-                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.LiveColorG, 1f)),
-                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.LiveColorB, 0.35f)),
-                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.LineAlpha, 0.9f)));
-
-            Color live = ResolveHudThemeColor(fallback);
+            Color live = ResolveHudThemeColor(_liveColorBase);
             live.a *= GetAppearanceAlphaMultiplier();
             return live;
         }
 
         private Color GetHoldColor()
         {
-            Color hold = new Color(
-                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.HoldColorR, 1f)),
-                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.HoldColorG, 0.85f)),
-                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.HoldColorB, 0.2f)),
-                Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.LineAlpha, 0.9f)));
+            Color hold = _holdColorBase;
             hold.a *= GetAppearanceAlphaMultiplier();
             return hold;
         }
@@ -613,6 +669,11 @@ namespace VectoringTargetHUD_Engine
         }
 
         private static bool GetValue(ConfigEntry<bool> entry, bool fallback)
+        {
+            return entry != null ? entry.Value : fallback;
+        }
+
+        private static string GetString(ConfigEntry<string> entry, string fallback)
         {
             return entry != null ? entry.Value : fallback;
         }
@@ -693,7 +754,7 @@ namespace VectoringTargetHUD_Engine
                 best = new Color(r, g, b, 1f);
             }
 
-            best.a = Mathf.Clamp01(GetValue(VectoringTargetHUDPlugin.LineAlpha, 0.9f));
+            best.a = _lineAlpha;
             _cachedHudLiveColor = best;
             return _cachedHudLiveColor;
         }

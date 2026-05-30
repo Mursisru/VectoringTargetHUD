@@ -4,7 +4,7 @@ using HarmonyLib;
 
 namespace VectoringTargetHUD_Engine
 {
-    [BepInPlugin("com.at747.nuclearoption.vectoringtargethud", "Vectoring Target HUD", "1.0.0")]
+    [BepInPlugin("com.at747.nuclearoption.vectoringtargethud", "Vectoring Target HUD", "1.0.1")]
     internal sealed class VectoringTargetHUDPlugin : BaseUnityPlugin
     {
         internal static ConfigEntry<float> UpdateRateHz;
