@@ -8,6 +8,21 @@
 
 `VectoringTargetHUD_Engine` is a BepInEx 5 plugin for Nuclear Option that draws a direction marker for selected air targets on the Flight HUD.
 
+---
+
+## Keywords
+
+nuclear-option, bepinex, harmony, mod, vectoringtargethud, csharp, unity
+---
+
+## Critical warnings
+
+> [!IMPORTANT]
+> **BepInEx 5 (x64) required** - install [BepInEx](https://docs.bepinex.dev/articles/user_guide/installation/index.html) before this mod.
+
+> [!NOTE]
+> **Observation-gated marker** - requires active observation; short hold uses frozen last-known state; no live tracking through lost visibility.
+
 ## Features
 
 - Wireframe prism-style direction marker with light fill.
@@ -69,9 +84,3 @@ If your game is installed in a different location, update `HintPath` entries in 
 - Marker visualization depends on target tracking state provided by game systems.
 - HUD colors can vary by game mode/cockpit HUD implementation.
 - Config values from previous versions may override new defaults until edited manually.
-
----
-
-## Keywords
-
-nuclear-option, bepinex, harmony, mod, vectoringtargethud, csharp, unity
