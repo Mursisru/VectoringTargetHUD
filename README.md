@@ -2,7 +2,8 @@
 
 # Vectoring Target HUD (Nuclear Option, BepInEx 5)
 
-[![Nuclear Option](https://img.shields.io/badge/Game-Nuclear%20Option-blue)](https://store.steampowered.com/app/2168680/Nuclear_Option/) [![BepInEx 5](https://img.shields.io/badge/Loader-BepInEx%205-orange)](https://docs.bepinex.dev/) [![Version](https://img.shields.io/badge/Version-1.0.1-green)]() [![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
+[![Nuclear Option](https://img.shields.io/badge/Game-Nuclear%20Option-blue)](https://store.steampowered.com/app/2168680/Nuclear_Option/) [![BepInEx 5](https://img.shields.io/badge/Loader-BepInEx%205-orange)](https://docs.bepinex.dev/) [![Version](https://img.shields.io/badge/Version-1.0.1-green)](https://github.com/Mursisru/VectoringTargetHUD/releases/tag/v1.0.1)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://github.com/Mursisru/VectoringTargetHUD/blob/main/LICENSE)
 
 
 `VectoringTargetHUD_Engine` is a BepInEx 5 plugin for Nuclear Option that draws a direction marker for selected air targets on the Flight HUD.
@@ -28,7 +29,10 @@
 
 ## Install (prebuilt DLL)
 
-1. Download release package from GitHub Releases.
+> [!IMPORTANT]
+> **BepInEx 5 (x64) required** — install [BepInEx](https://docs.bepinex.dev/articles/user_guide/installation/index.html) before this mod.
+
+1. Download release package from [GitHub Releases](https://github.com/Mursisru/VectoringTargetHUD/releases).
 2. Extract `VectoringTargetHUD_Engine.dll`.
 3. Copy it to:
 
