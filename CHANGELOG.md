@@ -1,9 +1,10 @@
 # Changelog
 
-## 1.0.1 — 2026-05-30
+## [1.0.1] - 2026-06-30
 
-### Performance
-- EnsureRenderConfig caches all BepInEx settings once per frame.
+### Changed
+- Documentation refresh: Developer header, badges, GitHub Alerts, Keywords, gitignore hygiene.
+
 
 All notable changes to this project are documented in this file.
 

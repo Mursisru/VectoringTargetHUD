@@ -1,0 +1,9 @@
+Vectoring Target HUD - Install
+
+1) Close Nuclear Option if it is running.
+2) Copy VectoringTargetHUD_Engine.dll to:
+   Nuclear Option\BepInEx\plugins\
+3) Start the game.
+
+Config file location:
+Nuclear Option\BepInEx\config\com.at747.nuclearoption.vectoringtargethud.cfg
